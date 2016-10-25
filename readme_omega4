@@ -1,0 +1,61 @@
+########################################################################
+# pipeline for autOmated MEtaGenomic Analysis (OMEGA) - module 4 v.0.1 #
+########################################################################
+
+OMEGA_module4.pl is the fourth module from the OMEGA pipeline. It is applicable for files annotated with OMEGA_module3.pl. The module performs classification on user-defined clade level based on various options, such as clade minimum abundance threshold percentage, minimum number of uniquely mapped reads, etc. (also user-defined, full list of available options can be seen below or in the help menu of the program). In addition, the module calculates and prints out coverage, depth and normalized abundances for the selected annotations.
+
+#########
+# Usage #
+#########
+
+$ OMEGA_module4.pl -i [input file name] -o [output filename] -c [clade] -l [logfile] -v [verbose] ...
+
+###########
+# Options #
+###########
+  __________________________________________________________________________________________________________________
+||Option||Default || Description                                                                                    |
+||	||	  ||                                                                                                |
+||  -h  ||        || Displays the help menu                                                                         |
+||  -i	||        || Input file name                                                                                |
+||  -o  || STDOUT || Output filename                                                                                |
+||  -s  ||  OFF   || Read counts are treated as single-end reads                                                    |
+||  -n  ||   0    || Minimum number of uniquely mapped reads                                                        |
+||  -a  ||   0    || Minimum abundance % abundance                                                                  |
+||  -r  ||  0.005 || minimum uniqueReadCount/ReadCount ratio                                                        | 
+||  -g  ||   0    || minimum coverage                                                                               |
+||  -m  ||  0.01  || maximum nucleotide error fraction                                                              |
+||  -c	|| strain || Collapse at clade level (strain, species, genus, family, order, class, phylum, superfamily)    |
+||  -f	||        || output file with failed hits                                                                   |
+||  -F  ||  OFF   || Size relative abundance normalization factor of 1000000                                        |
+||  -H  ||  OFF   || Print header                                                                                   |
+||  -l  || STDERR || logfile                                                                                        |
+||  -v  ||  OFF   || Verbose                                                                                        |
+||______||________||________________________________________________________________________________________________|
+
+Execution example:
+
+$ OMEGA_module4.pl -i annotFile -o annot.txt -H -a 0.01 -r 0.05 -l omega4.log -v
+
+Note:
+
+If collapsed taxa is set to 'species' or 'strain' the module will execute 2 times - one with user defined settings and the second time -r is set to 0 and -a is set to the minimum observed abundance found from the first round. This is done to automatically determine the minimum observed relative abundance and add more species/strain to the annotation results.
+
+coverage= 'covered_positions'/'size'
+paired-end reads: abundance= (100*read_count)/(size*2)
+single-end reads: abundance= (100*read_count)/(size), specify -s for single-end reads
+uniqReadCount ratio (option r) = uniqReadCount/readCount
+misMatch ratio (option m) = misMatches/nucleotides
+normalization = ('normfactor'/'tot_reads')*('relative_abundance')
+
+################
+# Output files #
+################
+
+OMEGA_module4.pl outputs a single file with annotations collapsed at user-defined clade level. This file is normally used as an input to OMEGA_module5.pl for future downstream analysis.
+
+###########
+# Credits #
+###########
+
+For questions and issues contact Thomas Nordahl Petersen tnp@cbs.dtu.dk or Kiril Plamenov Stanchev s142495@dtu.dk

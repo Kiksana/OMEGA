@@ -1,0 +1,148 @@
+########################################################################
+# pipeline for autOmated MEtaGenomic Analysis (OMEGA) - module 1 v.1.1 #
+########################################################################
+
+OMEGA_module1.pl is the first of a family of scripts that together form a fully automated pipeline for metagenomic analysis. Available on Computerome, OMEGA_module1.pl includes predefined commands for processing of FASTQ/FASTQ.gz whole genome sequence data through MGmapper.pl (both single and paired end options are available). The module itself can be found in two different types: 
+
+- OMEGA_module1.pl - Downloading and annotating raw data from publicly available studies. Files are downloaded from the European Nucleotide Archive (ENA) database which is syncronized with the Short Read Archive (SRA), the DNA Data Bank of Japan (DDBJ) and GenBank (NCBI) on daily basis.
+
+- OMEGA_module1_local.pl - For local, unpublished data.
+
+################
+# Dependencies #
+################
+
+In order to use OMEGA_module1.pl several modules have to be loaded beforehand: tools, perl/5.20.2, omega/1.1.
+For simplicity here is a command for fast load:
+
+$ module load tools moab torque perl/5.20.2 omega/1.1 # Order matters
+
+#########
+# Usage #
+#########
+
+For OMEGA_module1.pl:
+
+$ OMEGA_module1.pl -i [study accession] -L [list of tab-separated study accessions] -d [output directory] -p [processors per node] -m [sequencing mode] -l [logfile] -v [verbose]
+
+For OMEGA_module1_local.pl:
+
+$ OMEGA_module1_local.pl -i [study accession] -L [list of tab-separated study accessions] -d [output directory] -p [processors per node] -m [sequencing mode] -l [logfile] -v [verbose]
+
+Note: OMEAGA_module1_local.pl accepts only tab-separated file or list of tab-separated files in the following format as input:
+
+# num	study_acc	sample_acc	sequencing_mode    path_to_file1	path_to_file2
+
+where:
+- num - row number.
+- study_acc - arbitrary name of your study (always constant for the file - ex. study1).
+- sample_acc - arbitrary name of your sample (changes with each sample - ex. sample1, sample2...).
+- sequencing mode - PE for paired-end, SE for single-end.
+- path_to_file1 - absolute path to the file for the corresponding sample.
+- path_to_file2 (for paired-end reads) - absolute path to the file for the corresponding sample.
+
+The name of the input study accession must match the name of the file.
+
+###############
+# Limitations #
+###############
+
+Currently OMEGA_module1.pl and OMEGA_module1_local.pl support only fastq/fastq.gz files with raw data from Illumina platforms.
+
+###########
+# Options #
+###########
+  __________________________________________________________________________________________________________________________________________________
+||Option||Default|| Description											                                    |
+||	||	 ||                                                                                                                                 |
+||  -h  ||       || Displays the help menu. Important: always load the perl module in order to get to the help menu                                 |
+||  -i	|| STDIN || Input study accession 							                                                    |
+||  -L	||       || Input list of tab-separated study accessions 						                                    |
+||  -d  ||  ENA  || Output directory (Default for OMEGA_module1_local.pl is [workingDir]    		                                            |
+||  -P  ||       || Absolute path to parameter file with custom databases to be used for the alignment [/services/tools/mgmapper/2.4/databases.txt] |
+||  -C  ||       || Only if -P option is defined: map reads in Best mode against these databases (comma-separated numbers - the order matters)      |
+||  -F  ||       || Only if -P option is defined: map reads in Full mode against these databases (comma-separated numbers)                          |
+||  -p  ||   14  || Processors per node (ppn)								                                            |
+||  -m	||   2   || Sequencing mode: 1 = single, 2 = paired, 3 = both					                                            |
+||  -w  ||   14  || walltime (days) for each submitted MGmapper job  	 					                                    |
+||  -e  ||   60  || memory usage (Gb) for each submitted MGmapper job						                                    |
+||  -l	|| STDERR|| Logfile									                                                    |
+||  -v  ||  OFF  || Verbose									                                                    |
+||______||_______||_________________________________________________________________________________________________________________________________|
+
+Execution example:
+
+$ module load tools moab torque perl/5.20.2
+
+$ xqsub -V -d `pwd` -l nodes=1:ppn=8,mem=50,walltime=10:00:00:00 -de OMEGA_module1.pl -i study_acc -d myWorkDir -p 24 -l omega.log -v
+
+With -P option defined:
+
+$ xqsub -V -d `pwd` -l nodes=1:ppn=8,mem=50,walltime=10:00:00:00 -de OMEGA_module1.pl -i study_acc -d myWorkDir -p 24 -P /path/to/myCustomDBfile -F 1,2,3 -C 4,5,6 -l omega.log -v  
+
+#############################
+# MGmapper default commands #
+#############################
+
+By default MGmapper is executed within OMEGA_module1.pl and OMEGA_module1_local.pl through Computerome's queuing system, using the following commands:
+
+- For paired-end reads:
+
+$ xqsub -V -ro file -re file -N name -d initDir -l nodes=1:ppn=$ppn,mem=$mem,walltime=$walltime:00:00:00 -de MGmapper_PE.pl -I path_to_F_list -J path_to_R_list -d path_to_output_MGmapper_dir -C 1,5,3,4,2,11,8,9,16,7,10,19 -F 6,12 -c $ppn -M
+
+- For single-end reads:
+
+$ xqsub -V -ro file -re file -N name -d initDir -l nodes=1:ppn=$ppn,mem=$mem,walltime=$walltime:00:00:00 -de MGmapper_SE.pl -f path_to_list -d path_to_output_MGmapper_dir -C 1,5,3,4,2,11,8,9,16,7,10,19 -F 6,12 -c $ppn -M
+
+xqsub is simply a perl-wrapper of the popular qsub module for submitting batch jobs. The variable '$ppn' depicts the processors used per node (user defined - 4 by default), whereas '$walltime' depends on the per-sample number of fastq/fastq.gz files stored in each F_list (for forward reads) or just list (for single-end reads). -w walltime is added for each fastq file processed via MGmapper
+
+If directory "MGmapper" already exists the program does not start MGmapper. Instead, notification message is written in a log file (if -l is defined).
+By default all ".bam" files are removed for storage concerns. They might be saved if "-M" option at the end of MGmapper command line is removed.
+More about the MGmapper and xqsub commands can be seen by loading the respective module.
+
+########################
+# Annotation databases #
+########################
+
+The full list of available annotation databases in MGmapper can be seen from the help menu of the program. The ones used by OMEGA_module1.pl and OMEGA_module1_local.pl are listed below:
+
+- for chain mode (order matters - best scoring alignments from only one reference sequence is recorded):
+1 - Bacteria
+5 - Bacteria_draft
+3 - MetaHitAssembly
+4 - HumanMicrobiome
+2 - Archaea
+11 - Plasmid
+8 - Virus
+9 - Fungi
+16 - Invertebrates
+7 - Human
+10 - Protozoa
+19 - nt
+
+-for full mode (order does not matter - best scoring alignments from different reference sequences are recorded):
+6 - ResFinder
+12 - Virulence
+
+################################
+# Output files and directories #
+################################
+
+Several files and directories are created during and after the programs' execution. The flowchart below is somehow descriptive representation of the location for the most important ones (the hierarchy is the same for single and paired end reads):
+
+                                                  
+|===========|   |==========|   |==============|->|F_list|
+| workingDir|-->| studyDir |-->| sample(1)dir |->|R_list|  |=============|
+|===========|   |==========|   | sample(2)dir |----------->|  fastqDir   |-->|file(s).fastq.gz|
+                               | sample(N)dir |            |=============|
+                               |==============|----------->| MGmapperDir |-->|abundance.databases.txt|  |=========|   |stat.db(1).annot|
+                                                           |=============|----------------------------->| miscDir |-->|stat.db(2).annot|
+                                                                                                        |=========|   |stat.db(N).annot|
+
+Directory "MGmapper" and more precisely the file "abundance.databases.txt" and "misc" directory are used by the next modules in the OMEGA pipeline.
+
+###########
+# Credits #
+###########
+
+For questions and issues contact Thomas Nordahl Petersen tnp@cbs.dtu.dk or Kiril Plamenov Stanchev s142495@dtu.dk

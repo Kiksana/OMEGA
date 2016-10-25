@@ -1,0 +1,76 @@
+########################################################################
+# pipeline for autOmated MEtaGenomic Analysis (OMEGA) - module 3 v.0.1 #
+########################################################################
+
+OMEGA_module3.pl is the third module from the OMEGA pipeline. Its primary use is to extract user defined information about specific study accession that already exists in the selected MySQL database. Additionally, the module can be used to retrieve a list of available annotation databases which can then be entered selectively as an option.
+  
+################
+# Dependencies #
+################
+
+Granted access to existing MySQL database, if different than the default one. To be able to access a database, a file ".my.cnf" with access options must be available in the user's home directory in both Computerome and CBS. If such file does not exist, it can be created. Here is a description of ".my.cnf" content:
+
+[client]
+user = myusername
+password = mypassword
+host = 127.0.0.1
+port = random number between 4000 and 14000
+[mysql]
+pager=less
+
+# Space separator is mandatory
+
+Additionally, the following modules must be loaded beforehand:
+
+module load tools mariadb/10.0.21
+module load tools perl/5.20.2
+module load tools cbsperltools/1.0
+
+#########
+# Usage #
+#########
+
+$ OMEGA_module3.pl -i [study accession] -o [output filename] -s [sample accession] -d [database ID] -D [MySQL database] -l [logfile] -v [verbose]
+
+Note:
+If more than one study accession, sample accession or database ID is selected, they must be placed within single quotes and separated by space ('db1 db2 db3').
+
+###########
+# Options #
+###########
+  _________________________________________________________________________________________________________________
+||Option||Default|| Description											   |
+||	||	 ||                                                                                                |
+||  -h  ||       || Displays the help menu                                                                         |
+||  -i	||       || Input study accession(s)                                                                       |
+||  -o  || STDOUT|| Output filename                                                                                |
+||  -s  ||  ALL  || input sample accession(s)                                                                      |
+||  -L  ||       || input list of sample accessions separated by new line                                          |
+||  -d  ||  ALL  || input annotation database ID                                                                   |
+||  -D  ||       || MySQL database name                                                                            |
+||  -S	||  OFF  || Retrieve annotation database id's from MySQL database and exits                                |
+||  -l	|| STDERR|| Logfile                                                                                        |
+||  -v  ||  OFF  || Verbose                                                                                        |
+||______||_______||________________________________________________________________________________________________|
+
+Execution example:
+
+$ OMEGA_module3.pl -i study1 -o annot.txt -s 'sample1 sample2 sampleN' -d 'db1 db2 dbN' -D myMSQLdb -l omega3.log -v
+
+View available annotation databases for the MySQL database of interest (requires grant access):
+
+$ OMEGA_module3.pl -S -D myMySQLdb
+
+################
+# Output files #
+################
+
+If "-o" option is defined, OMEGA_module3.pl saves the output in a tab-separated file located in the current directory. The format of the file enables its usage as input to OMEGA_module4.pl which is modified version of MGmapper_classify.pl. (Note that the file can not be used as input to MGmapper_classify.pl as it is slightly different). Since module 4 does not accept headers, the columns of the file are described below.
+
+study_sample|read_count|db_id|seq_id|size|nucleotide_count|covered_pos|read_count|read_count_unique|edit_distance|description|superfamily|superfamilyTax|phylum|phylumTax|class|classTax|order|orderTax|family|familyTax|genus|genusTax|species|speciesTax|strain|strainTax|
+
+###########
+# Credits #
+###########
+
+For questions and issues contact Thomas Nordahl Petersen tnp@cbs.dtu.dk or Kiril Plamenov Stanchev s142495@dtu.dk

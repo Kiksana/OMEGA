@@ -1,0 +1,85 @@
+########################################################################
+# pipeline for autOmated MEtaGenomic Analysis (OMEGA) - module 5 v.0.1 #
+########################################################################
+
+OMEGA_module5.pl is the fifth and final module from the OMEGA pipeline. It is used for automated comparative analysis between two conditionally different set of samples. The module accepts the file format from OMEGA_module4.pl and process its information into two categories. 
+The module is able to construct text files with ready-to-use matrices for R. Based on user-defined options these files contain the following information:
+- "abundance_mat.txt" - abundance matrix which can later be used as input for artificial neural network (see below).
+- "counts_mat.txt" - matrix with read counts per clade per sample. This file is used for in-depth analysis with an R script implemented in the module.
+- "condition.txt" - file with conditional state for all samples in the current study.
+- "alpha_diversity_A.txt" - file with information about the richness of each sample with condition A.
+- "alpha_diversity_B.txt" - file with information about the richness of each sample with condition B.
+- "results.csv" -  comma-separated value (csv) file with statistical information (adjusted p-value, p-value, etc.) for each clade
+
+During the analysis, OMEGA_module5.pl uses R script with integrated DESeq2 commands to draw several plots with various information in each. DESeq2 is R package and has to be present, together with few other packages (see Dependencies) in order for the analysis to take place.
+Upon completion log file with possible errors interrupting execution of the R script are created.
+
+To read more about the content of each plot generated with R go to "Output plots" at the end of this readme.
+
+################
+# Dependencies #
+################
+
+Several conditions have to be fulfilled prior to execution of OMEGA_module5.pl:
+- two lists with discriminatory conditional states must be provided. The list contains all samples which will be used in the analysis. The format of the names has to be "study_sample" where study is the study accession and sample is the sample accession of interest, joined together by "_". Each "study_sample" is separated by new line.
+- R version 3.2.5 (or later).
+- Bioconductor for R:
+(source("http://bioconductor.org/workflows.R"))
+biocLite()
+- DESeq2 R package:
+biocLite("DESeq2")
+
+To learn more about any of the installed packages type "browseVignettes("package")" in R for the package of interest.
+
+#########
+# Usage #
+#########
+
+$ OMEGA_module5.pl -i [input file name] -A [file with condition A] -B [file with condition B] -R -r -l [logfile] -v [verbose] -n [ann ready file] ...
+
+###########
+# Options #
+###########
+  __________________________________________________________________________________________________________________
+||Option||Default || Description                                                                                    |
+||	||	  ||                                                                                                |
+||  -h  ||        || Displays the help menu                                                                         |
+||  -i	||        || Input file name                                                                                |
+||  -A  ||        || List of study_sample accessions separated by new line                                          |
+||  -B  ||        || List of study_sample accessions separated by new line                                          |
+||  -H  ||  OFF   || Print header                                                                                   |
+||  -f  ||  0.0   || clade minimum occurance in either set of samples % occurance                                   |
+||  -R	||  OFF   || R matrix-ready tab separated file with normalized abundances                                   |
+||  -r	||  OFF   || R matrix-ready tab separated file with read counts                                             |
+||  -O  ||  OFF   || print to STDOUT tab-separated normalized abundances                                            |
+||  -o  ||  OFF   || print to STDOUT tab-separated read counts                                                      |
+||  -b  ||        || re-run the module with customized batch.R script found in directory 'OMEGA_R'                  |
+||  -l  || STDERR || logfile                                                                                        |
+||  -v  ||  OFF   || Verbose                                                                                        |
+||______||________||________________________________________________________________________________________________|
+
+Execution example:
+
+$ OMEGA_module5.pl -i annotFile -A cond_A -B cond_B -R -r -f 0.5
+
+Note:
+- Option "-f" accepts floating point numbers as percentage (0-1).
+- In regards to "-f" option - if "-r" option is specified, we suggest to leave the threshold for minimum occurance in either samples set to its default state, since the "DESeq2" package does the normalization of read counts itself and increasing the threshold might lead to loss of sensitivity.
+- If none of the options "-R, -r, -O, -o" is chosen the output will also be none.
+
+################
+# Output plots #
+################
+
+Besides the matrix files, several plots are also generated upon completion of OMEGA_module5.pl (taking into account that the R script was not interrupted by error). All outputs are saved in a drectory called "OMEGA_R" by their default names. Below is more detailed description of each plot.
+
+- "dens_plot_cond.jpg" - density plot for the number of clades in both conditional sets. It shows whether the analysis might be biased by significant differences in the density of each sample in the set.
+- "MAplot.jpg" - comparison of log2 fold change (l2fc) for each normalized clade counts between the two conditional sets. Red dots imply significant difference in l2fc for a particular clade between the sets.
+- "min_padj_log2counts.jpg" - plots the top most significantly different clade between the sets, with respect to their log2 counts.
+- "min_padj_normcounts.jpg" - same as above, but the emphasis is on the normalized counts instead of log2 counts.
+
+###########
+# Credits #
+###########
+
+For questions and issues contact Thomas Nordahl Petersen tnp@cbs.dtu.dk or Kiril Plamenov Stanchev s142495@dtu.dk

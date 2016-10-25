@@ -1,0 +1,124 @@
+########################################################################
+# pipeline for autOmated MEtaGenomic Analysis (OMEGA) - module 2 v.0.1 #
+########################################################################
+
+OMEGA_module2.pl is the second module from the OMEGA pipeline. It is designed to create MySQL tables with "omega_" prefix, thus shunning already existing ones in user's private MySQL database. The module relies on "MGmapper" output "misc" directory containing each database annotation file. In addition, "abundance.databases.txt" with recorded reads mapped to each of the annotation databases is used. OMEGA_module2.pl creates MySQL directory (named "MySQL" by default) with several tab-separated files named after the tables to be inserted in the MySQL database. As a last step, each file's content is registered into its appropriate table in the user's database.
+
+################
+# Dependencies #
+################
+
+OMEGA_module2.pl requires solely on already existing MySQL database. To be able to access a database, a file ".my.cnf" with access options must be available in the user's home directoryin both Computerome and CBS. If such file does not exist, it can be created. Here is a description of ".my.cnf" content:
+
+[client]
+user = myusername
+password = mypassword
+host = 127.0.0.1
+port = random number between 4000 and 14000
+[mysql]
+pager=less
+
+# Space separator is mandatory
+
+Additionally, the following modules must be loaded beforehand:
+
+module load tools mariadb/10.0.21
+module load tools perl/5.20.2
+module load tools cbsperltools/1.0
+
+#########
+# Usage #
+#########
+
+$ OMEGA_module2.pl -i [study accession] -d [working directory] -m [MySQL output directory] -D [MySQL database] -l [logfile] -v [verbose]
+
+Note (only for processing of local data):
+The name of the study accession must match the name of the file containing the following information:
+
+# num	study_acc	sample_acc	sequencing_mode    path_to_file1	path_to_file2
+
+where:
+- num - row number.
+- study_acc - arbitrary name of your study (always constant for the file - ex. study1).
+- sample_acc - arbitrary name of your sample (changes with each sample - ex. sample1, sample2...).
+- sequencing mode - PE for paired-end, SE for single-end.
+- path_to_file1 - absolute path to the file for the corresponding sample.
+- path_to_file2 (for paired-end reads) - absolute path to the file for the corresponding sample.
+
+The name of the working directory must match the name of the directory given in module 1. If that is not the case, the name of the working directory must match the "MGmapper" preceding directory.
+Screen session can be used to avoid the waiting time.
+
+###########
+# Options #
+###########
+  _________________________________________________________________________________________________________________
+||Option||Default|| Description											   |
+||	||	 ||                                                                                                |
+||  -h  ||       || Displays the help menu                                                                         |
+||  -i	||       || Input study accession                                                                          |
+||  -L  ||       || Input list of tab-separated study accessions                                                   |
+||  -d  ||  ENA  || Working directory                                                                              |
+||  -m  || MySQL || MySQL output directory                                                                         |
+||  -D	||       || MySQL database                                                                                 |
+||  -l	|| STDERR|| Logfile                                                                                        |
+||  -v  ||  OFF  || Verbose                                                                                        |
+||______||_______||________________________________________________________________________________________________|
+
+Execution example:
+
+$ OMEGA_module2.pl -i study1 -d myDir -m myMySQLdir -D myMSQLdb -l omega2.log -v
+
+
+################################
+# Output files and directories #
+################################
+
+Upon completion, OMEGA_module2.pl creates a directory "MySQL" (default settings) with several tab-separated files. Since the column names for each files are only visible in the MySQL database, below we provide description for each of them without the necessity of establishing connection to MySQL in order to view them.
+
+- "omega_databasesRef.tab"
+ _____ __________
+|db_id|db_version|
+|_____|__________|
+|     |          |
+
+- "omega_study.tab"
+ _________ ___________
+|study_acc|description|
+|_________|___________|
+|         |           |
+
+- "omega_study_sample.tab"
+ _________ __________ __________
+|study_acc|sample_acc|read_count|
+|_________|__________|__________|
+|         |          |          |
+
+- "omega_study_sample_databasesRef.tab"
+ _________ __________ _____ __________
+|study_acc|sample_acc|db_id|db_version|
+|_________|__________|_____|__________|
+|         |          |     |          |
+
+- "omega_run_info.tab"
+ _________ __________ ________ ____________ ____ ________ _______
+|study_acc|sample_acc|seq_mode|MGmapper_ver|date|work_dir|command|
+|_________|__________|________|____________|____|________|_______|
+|         |          |        |            |    |        |       |
+
+- "omega_seq_data.tab"
+ _________ __________ _____ ______ ____ ________________ ___________ __________ _________________ _____________ ___________
+|study_acc|sample_acc|db_id|seq_id|size|nucleotide_count|covered_pos|read_count|read_count_unique|edit_distance|description|
+|_________|__________|_____|______|____|________________|___________|__________|_________________|_____________|___________|
+|         |          |     |      |    |                |           |          |                 |             |           |
+
+- "omega_taxonomy.tab"
+ _________ __________ _____ ______ ___________ ______________ ______ _________ _____ ________ _____ ________ ______ _________ _____ ________ _______ __________ ______ _________
+|study_acc|sample_acc|db_id|seq_id|superfamily|superfamilyTax|phylum|phylumTax|class|classTax|order|orderTax|family|familyTax|genus|genusTax|species|speciesTax|strain|strainTax|
+|_________|__________|_____|______|___________|______________|______|_________|_____|________|_____|________|______|_________|_____|________|_______|__________|______|_________|
+|         |          |     |      |           |              |      |         |     |        |     |        |      |         |     |        |       |          |      |         |
+
+###########
+# Credits #
+###########
+
+For questions and issues contact Thomas Nordahl Petersen tnp@cbs.dtu.dk or Kiril Plamenov Stanchev s142495@dtu.dk
